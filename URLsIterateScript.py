@@ -17,10 +17,10 @@ a = cursor.execute(
             """SELECT * FROM messages
 ORDER BY 1;"""
 )
-
+import re
 for i in a:
-    for j in i[3].split(" "):
-        if j.startswith("https://") and j not in datums and "\n" not in j:
+    for j in re.split("(\n| )", i[3]):
+        if j.startswith("https://") and j not in datums:
             datums.append(j)
             sodium.append(j)
             #print(j)
