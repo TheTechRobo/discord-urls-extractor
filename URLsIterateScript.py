@@ -19,8 +19,8 @@ ORDER BY 1;"""
 )
 import re
 for i in a:
-    for j in re.split("(\n| )", i[3]):
-        if j.startswith("https://") and j not in datums:
+    for j in re.split("(\n| |\(|\))", i[3]):
+        if (j.startswith("https://") or j.startswith("http://")) and j not in datums:
             datums.append(j)
             sodium.append(j)
             #print(j)
