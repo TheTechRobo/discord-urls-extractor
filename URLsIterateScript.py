@@ -13,6 +13,7 @@ cursor = sqliteConnection.cursor()
 
 print("Connected to the DB!")
 
+# messages table is where the messages are (duh). They are stored in a tuple, the 4th value is the message data.
 a = cursor.execute(
             """SELECT * FROM messages
 ORDER BY 1;"""
@@ -24,7 +25,7 @@ for i in a:
             datums.append(j)
             sodium.append(j)
             #print(j)
-print(len(datums), "urls processed.")
+print(len(sodium), "urls processed.")
 
 print("Writing to file.")
 with open("ignores.url","w+") as ignrs:
