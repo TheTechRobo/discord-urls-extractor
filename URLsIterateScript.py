@@ -13,8 +13,14 @@ cursor = sqliteConnection.cursor()
 
 print("Connected to the DB!")
 
-a = cursor.execute(
+messages = cursor.execute(
             """SELECT * FROM messages
+ORDER BY 1;"""
+)
+a = messages
+cursor = sqliteConnection.cursor()
+attachments = cursor.execute(
+        """SELECT * FROM attachments
 ORDER BY 1;"""
 )
 import re
@@ -24,6 +30,11 @@ for i in a:
             datums.append(j)
             sodium.append(j)
             #print(j)
+for attach in attachments:
+    attachm = attach[4]
+    print(attachm)
+    datums.append(attachm)
+    sodium.append(attachm)
 print(len(datums), "urls processed.")
 
 print("Writing to file.")
