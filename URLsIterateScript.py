@@ -26,7 +26,8 @@ ORDER BY 1;"""
 )
 for i in messages:
     for j in re.split("(\n| |\(|\)|\<|\>)", i[3]): # Split at every newline, space, or parentheses
-        if (j.startswith("https://") or j.startswith("http://")) and j not in datums:
+        if j in datums: continue
+        if (j.startswith("https://") or j.startswith("http://")):
             datums.append(j)
             sodium.append(j)
             #print(j)
@@ -34,6 +35,7 @@ for i in messages:
 for attach in attachments:
     attachm = attach[4] # Attachment URL is stored in the 5th item in the tuple.
     #print(attachm)
+    if attachm in datums: continue
     datums.append(attachm)
     sodium.append(attachm)
 print(len(sodium), "urls processed.")
