@@ -1,5 +1,3 @@
-*
 target/
-*.dht
+dsicord_data/
 *.url
-*/*.url
