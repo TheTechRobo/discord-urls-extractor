@@ -10,6 +10,7 @@ struct S {
 }
 
 fn read_data() -> Vec<String> {
+    eprintln!("Reading ignores. Please wait...");
     let status = fs::read_to_string("ignores.url");//.split("\n").collect();
     let status = match status {
         Ok(s) => s,
@@ -24,6 +25,7 @@ fn read_data() -> Vec<String> {
 }
 
 fn write_data(ignores: Vec<String>, urls: Vec<String>) {
+    eprintln!("Now writing data.");
     let file = fs::OpenOptions::new()
               .write(true)
                     .append(true)
@@ -36,11 +38,11 @@ fn write_data(ignores: Vec<String>, urls: Vec<String>) {
     };
     if filefailed == false {
     for ignore in ignores {
-        write!(file, "{}\n", ignore);
+        write!(file, "{}\n", ignore).expect("failed to write file");
     }
     }
     let mut file = fs::OpenOptions::new().create(true).write(true).open("urls.url").unwrap();
-    for url in urls { write!(file, "{}\n", url); }
+    for url in urls { write!(file, "{}\n", url).expect("failed to write URLs"); }
     //https://www.codegrepper.com/code-examples/rust/rust+how+to+append+to+a+file
 }
 fn main() {
@@ -51,29 +53,38 @@ fn main() {
 
     let mut ignores = read_data();
     let mut urls = vec!();
-    eprintln!("Please wait...");
+    eprintln!("Connecting to SQL Database...");
     let conn = Connection::open(&args[1]).unwrap();
+    eprintln!("Attachments...");
     let mut stmt = conn.prepare("SELECT * FROM attachments").unwrap();
     let person_iter = stmt.query_map([], |row| {
                 Ok(S {
-                    data: row.get(4).unwrap(),
+                    data: row.get(4).unwrap(), //attachment URL is on 5th column of each row.
                     })
                     }).unwrap();
     for attachment_url in person_iter {
-        urls.push(attachment_url.unwrap().data);
+        let att = attachment_url.unwrap().data;
+        if ignores.contains(&att) {
+            continue;
+        }
+        urls.push(att);
     }
+    eprintln!("Finished attachments. Now extracting messages...\nThis may take a while. Go get a coffee.");
     let mut stmt = conn.prepare("SELECT * FROM messages").unwrap();
     let person_iter = stmt.query_map([], |row| {
         Ok(S {
-            data: row.get(3).unwrap(),
+            data: row.get(3).unwrap(), // message data is on 4th column of each row.
         })}).unwrap();
     for message in person_iter {
-        let m = &message.unwrap().data;
+        let m = message.unwrap().data;
         //let regex = Regex::new(r"(\n| |(|)|<|>)").unwrap();
-        let regex = Regex::new(r"[\n()<>]").expect("bad regex");
-        let splitted = regex.split(m);
+        let regex = Regex::new(r"[\n()<>]").expect("bad regex"); // split by newlines, brackets, and angle brackets
+        let splitted = regex.split(&m);
         for i in splitted {
-            if i.starts_with("http://") || i.starts_with("https://") {
+            if i.starts_with("http://") || i.starts_with("https://") { // check if its actually an HTTP/S url
+                if ignores.contains(&i.to_string()) {
+                    continue;
+                }
                 urls.push(i.to_string());
             }
         }
