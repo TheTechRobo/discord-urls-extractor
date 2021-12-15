@@ -1,3 +1,4 @@
+use regex::Regex;
 use rusqlite::{params, Connection, Result};
 use std::io::Write;
 use std::fs;
@@ -58,16 +59,27 @@ fn main() {
                     data: row.get(4).unwrap(),
                     })
                     }).unwrap();
-    for hi in person_iter {
-        ignores.push(hi.unwrap().data);
-        //urls.push(hi.unwrap().data.clone());
+    for attachment_url in person_iter {
+        urls.push(attachment_url.unwrap().data);
     }
-    let mut stmt = conn.prepare("SELECT * FROM attachments").unwrap();
-    let position_iter = stmt.query_map([], |row| {
-        Ok(S { data:row.get(4).unwrap(),})}).unwrap();
-
-    for hi2 in position_iter {
-        urls.push(hi2.unwrap().data);
+    let mut stmt = conn.prepare("SELECT * FROM messages").unwrap();
+    let person_iter = stmt.query_map([], |row| {
+        Ok(S {
+            data: row.get(3).unwrap(),
+        })}).unwrap();
+    for message in person_iter {
+        let m = &message.unwrap().data;
+        //let regex = Regex::new(r"(\n| |(|)|<|>)").unwrap();
+        let regex = Regex::new(r"[\n()<>]").expect("bad regex");
+        let splitted = regex.split(m);
+        for i in splitted {
+            if i.starts_with("http://") || i.starts_with("https://") {
+                urls.push(i.to_string());
+            }
+        }
+    }
+    for url_to_ignore in &urls {
+        ignores.push(url_to_ignore.clone());
     }
     write_data(ignores, urls);
 
