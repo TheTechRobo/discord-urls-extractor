@@ -1,4 +1,14 @@
+input("""
+\t\t\tWARNING
+This script is DEPERECATED.
+Please switch to the Rust build. It's 100000000x faster.
+Thank you. :)
+
+(Press ENTER if you don't care and want to use this anyway.)""")
+
 import re, sqlite3
+
+from alive_progress import alive_bar
 
 try:
     with open("ignores.url") as file:
@@ -24,20 +34,23 @@ attachments = cursor.execute(
         """SELECT * FROM attachments
 ORDER BY 1;"""
 )
-for i in messages:
-    for j in re.split("(\n| |\(|\)|\<|\>)", i[3]): # Split at every newline, space, or parentheses
-        if j in datums: continue
-        if (j.startswith("https://") or j.startswith("http://")):
-            datums.append(j)
-            sodium.append(j)
+with alive_bar() as bar:
+    for i in messages:
+        for j in re.split("(\n| |\(|\)|\<|\>)", i[3]): # Split at every newline, space, or parentheses
+            if j in datums: continue
+            if (j.startswith("https://") or j.startswith("http://")):
+                datums.append(j)
+                sodium.append(j)
+                bar()
             #print(j)
-
-for attach in attachments:
-    attachm = attach[4] # Attachment URL is stored in the 5th item in the tuple.
+    print("Moving on to attachments...")
+    for attach in attachments:
+        attachm = attach[4] # Attachment URL is stored in the 5th item in the tuple.
     #print(attachm)
-    if attachm in datums: continue
-    datums.append(attachm)
-    sodium.append(attachm)
+        if attachm in datums: continue
+        datums.append(attachm)
+        sodium.append(attachm)
+        bar()
 print(len(sodium), "urls processed.")
 print("Writing to file.")
 with open("ignores.url","w+") as ignrs: # This file lists URLs that have already been extracted. This way you can do incremental runs
