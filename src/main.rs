@@ -78,7 +78,7 @@ fn main() {
     for message in person_iter {
         let m = message.unwrap().data;
         //let regex = Regex::new(r"(\n| |(|)|<|>)").unwrap();
-        let regex = Regex::new(r"[\n()<>]").expect("bad regex"); // split by newlines, brackets, and angle brackets
+        let regex = Regex::new(r"[ \n()<>]").unwrap(); // split by newlines, brackets, spaces, and angle brackets
         let splitted = regex.split(&m);
         for i in splitted {
             if i.starts_with("http://") || i.starts_with("https://") { // check if its actually an HTTP/S url
