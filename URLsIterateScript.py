@@ -1,10 +1,12 @@
-input("""
-\t\t\tWARNING
+import sys
+
+sys.exit("""
+\t\tWARNING
 This script is DEPERECATED.
-Please switch to the Rust build. It's 100000000x faster.
+Please switch to the Rust build. It's 100000000x faster, and extracts URLs much better.
 Thank you. :)
 
-(Press ENTER if you don't care and want to use this anyway.)""")
+(If you would like to still use this script, you'll have to modify it.)""")
 
 import re, sqlite3
 
