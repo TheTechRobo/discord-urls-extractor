@@ -75,16 +75,14 @@ fn main() {
         Ok(S {
             data: row.get(3).unwrap(), // message data is on 4th column of each row.
         })}).unwrap();
+    // urls start with https?://, can contain every character except whitespaces and <
+    // urls can't end with ?~*|<>.,:;"'`)] or whitespaces
+    let regex = Regex::new(r#"(https?://[^\s<]+[^?~*|<>.,:;"'`)\]\s])"#).unwrap();
     for message in person_iter {
         let m = message.unwrap().data;
-        //let regex = Regex::new(r"(\n| |(|)|<|>)").unwrap();
-        let regex = Regex::new(r"[ \n()<>]").unwrap(); // split by newlines, brackets, spaces, and angle brackets
-        let splitted = regex.split(&m);
-        for i in splitted {
-            if i.starts_with("http://") || i.starts_with("https://") { // check if its actually an HTTP/S url
-                if ignores.contains(&i.to_string()) {
-                    continue;
-                }
+        for mat in regex.find_iter(&m) {
+            let i = mat.as_str(); 
+            if !ignores.contains(&i.to_string()) {
                 urls.push(i.to_string());
             }
         }
