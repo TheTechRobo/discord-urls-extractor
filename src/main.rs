@@ -1,7 +1,8 @@
 use regex::Regex;
-use rusqlite::{params, Connection, Result};
+use rusqlite::Connection;
 use std::io::Write;
 use std::fs;
+use std::io::Error;
 
 #[derive(Debug)]
 
@@ -14,9 +15,9 @@ fn read_data() -> Vec<String> {
     let status = fs::read_to_string("ignores.url");//.split("\n").collect();
     let status = match status {
         Ok(s) => s,
-        Err(err) => { eprintln!("failed to read ignores.url, proceeding with default");"".to_string() },
+        Err(_) => { eprintln!("failed to read ignores.url, proceeding with default");"".to_string() },
     };
-    let ej: Vec<&str> = status.split("\n").collect();
+    let ej: Vec<&str> = status.split('\n').collect();
     let mut fj = vec!();
     for i in ej {
         fj.push(i.to_string());
@@ -32,17 +33,21 @@ fn write_data(ignores: Vec<String>, urls: Vec<String>) {
                     .create(true)
                           .open("ignores.url");
     let mut filefailed = false;
+    let mut error: Error = Error::new(std::io::ErrorKind::Other, "bye");
     let mut file = match file {
         Ok(fil) => {filefailed = false; fil},
-        Err(fil) =>{filefailed = true; fs::OpenOptions::new().write(true).append(true).open("/dev/null").unwrap()},
+        Err(e) =>{error = e;filefailed = true; fs::OpenOptions::new().write(true).append(true).open("/dev/null").unwrap()},
     };
-    if filefailed == false {
-    for ignore in ignores {
-        write!(file, "{}\n", ignore).expect("failed to write file");
+    if !filefailed {
+        for ignore in ignores {
+            writeln!(file, "{}", ignore).expect("failed to write file");
+        }
     }
+    else {
+        eprintln!("Failed to write ignores: {}", error);
     }
     let mut file = fs::OpenOptions::new().create(true).write(true).open("urls.url").unwrap();
-    for url in urls { write!(file, "{}\n", url).expect("failed to write URLs"); }
+    for url in urls { writeln!(file, "{}", url).expect("failed to write URLs"); }
     //https://www.codegrepper.com/code-examples/rust/rust+how+to+append+to+a+file
 }
 fn main() {
