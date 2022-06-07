@@ -8,6 +8,7 @@ edition = "2021"
 [dependencies]
 regex = "1.5.4"
 rusqlite = "0.26.3"
+tinyjson = "2.3.0"
 
 [profile.dev]
 opt-level = 2

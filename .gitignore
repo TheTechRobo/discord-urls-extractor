@@ -1,3 +1,7 @@
 target/
 dsicord_data/
 *.url
+*.dht
+*.jsonl
+*.json
+*.mitmdump

@@ -2,12 +2,17 @@ use regex::Regex;
 use rusqlite::Connection;
 use std::io::Write;
 use std::fs;
-use std::io::Error;
+use std::fs::File;
+use std::io::{Error, BufReader, BufRead};
 
 #[derive(Debug)]
-
 struct S {
     data: String
+}
+
+struct RetVal {
+    urls: Vec<String>,
+    ignores: Vec<String>
 }
 
 fn read_data() -> Vec<String> {
@@ -50,16 +55,10 @@ fn write_data(ignores: Vec<String>, urls: Vec<String>) {
     for url in urls { writeln!(file, "{}", url).expect("failed to write URLs"); }
     //https://www.codegrepper.com/code-examples/rust/rust+how+to+append+to+a+file
 }
-fn main() {
-        let args: Vec<String> = std::env::args().collect();
-            if args.len() < 2 {
-                        panic!("not enough arguments lol");
-                            }
 
-    let mut ignores = read_data();
-    let mut urls = vec!();
-    eprintln!("Connecting to SQL Database...");
-    let conn = Connection::open(&args[1]).unwrap();
+fn sql(filename: &str, ignores: Vec<String>, mut urls: Vec<String>, regex: Regex) -> RetVal {
+    eprintln!("Connecting to SQL database...");
+    let conn = Connection::open(filename).unwrap();
     eprintln!("Attachments...");
     let mut stmt = conn.prepare("SELECT * FROM attachments").unwrap();
     let person_iter = stmt.query_map([], |row| {
@@ -80,18 +79,49 @@ fn main() {
         Ok(S {
             data: row.get(3).unwrap(), // message data is on 4th column of each row.
         })}).unwrap();
-    // urls start with https?://, can contain every character except whitespaces and <
-    // urls can't end with ?~*|<>.,:;"'`)] or whitespaces
-    let regex = Regex::new(r#"(https?://[^\s<]+[^?~*|<>.,:;"'`)\]\s])"#).unwrap();
     for message in person_iter {
         let m = message.unwrap().data;
         for mat in regex.find_iter(&m) {
-            let i = mat.as_str(); 
+            let i = mat.as_str();
             if !ignores.contains(&i.to_string()) {
                 urls.push(i.to_string());
             }
         }
     }
+    RetVal { urls, ignores }
+}
+
+fn plain_text(filename: &str, ignores: Vec<String>, mut urls: Vec<String>, regex: Regex) -> RetVal {
+    let file = File::open(filename).expect("Failed to open file");
+    let reader = BufReader::new(file);
+    for line in reader.lines() {
+        let m = line.unwrap();
+        for mat in regex.find_iter(&m) {
+            let i = mat.as_str();
+            if !ignores.contains(&i.to_string()) {
+                urls.push(i.to_string());
+            }
+        }
+    }
+    RetVal { urls, ignores }
+}
+
+fn main() {
+    let regex = Regex::new(r#"(https?://[^\s<]+[^?~*|<>.,:;"'`)\]\s])"#).unwrap();
+    let args: Vec<String> = std::env::args().collect();
+    let usage = format!("Usage: {} <file> <type: dht|plaintext>", &args[0]);
+    if args.len() < 3 {
+        panic!("{}", usage);
+    }
+    let mut ignores = read_data();
+    let mut urls = vec!();
+    let s: RetVal = match args[2].as_str() {
+        "dht" => sql(&args[1], ignores.clone(), urls.clone(), regex),
+        "plaintext" => plain_text(&args[1], ignores.clone(), urls.clone(), regex),
+        _ => panic!("{}", usage)
+    };
+    urls = s.urls;
+    ignores = s.ignores;
     for url_to_ignore in &urls {
         ignores.push(url_to_ignore.clone());
     }
