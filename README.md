@@ -20,6 +20,13 @@ This one's a bit more work, because I'm too lazy to figure out the raw JSONL dis
 3. Run `cargo r messages.txt plaintext`, assuming you named the file in Step 2 `messages.txt`.
 4. Combine the file you saved in Step 1 with the `urls.url` file produced by this script.
 
+## Usage with plain text
+If you have some plain text files, you can use them directly. That will find all URLs saved in the file, or at least most of them.
+
+    cargo r <file path> plaintext
+    
+## Licence
+
 Licenced under the Apache 2.0 licence. Copyright (C) TheTechRobo, 2021-2022.
 
 >   Copyright 2021-2022 TheTechRobo
