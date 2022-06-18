@@ -4,6 +4,8 @@ Created for injesting URLs from DHT scrapes (and now discard2 ones, too!) into t
 Might not extract all URLs correctly. [#8](https://github.com/TheTechRobo/discordhistorytracker-urls-extractor/pull/8) improved on this, though.
 
 ## Usage with Discord History Tracker (DESKTOP APP ONLY)
+:warning: Note that the DHT extractor is pretty much unmaintained since I no longer use it. I'll fix bugs, but it doesn't support embeds or any new DHT features. It only supports extracting attachment urls (which can now be done via DHT!) and finding URLs in messages using a regex. It does not look through embeds or any other feature.
+
 Once you've got your .dht file, run:
 
     cargo r <file path> dht
@@ -13,6 +15,9 @@ Of course, if the file path has spaces, pad it with quotes (`"`).
 Example: `cargo r /home/thetechrobo/Discordbackups/dsicord_data/SteamgridDB/SteamGridDB.dht dht`
 
 ## Usage with discard2
+
+:warning: These steps are going to change! (The current steps will still work, but they won't ever get things like embeds.) Watch this space!
+
 This one's a bit more work, because I'm too lazy to figure out the raw JSONL discard2 can output. If you don't know how to use a reader for discard2, check its README.
 
 1. Use the `derive-urls` reader to get a list of attachments. Save that into a file. Do not name that file `urls.url` or `ignores.url`.
