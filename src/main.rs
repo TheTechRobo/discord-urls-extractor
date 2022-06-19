@@ -1,32 +1,35 @@
 use regex::Regex;
 use rusqlite::Connection;
-use std::io::Write;
+use std::collections::HashMap;
 use std::fs;
 use std::fs::File;
-use std::io::{Error, BufReader, BufRead};
-use std::collections::HashMap;
+use std::io::Write;
+use std::io::{BufRead, BufReader, Error};
 
 use tinyjson::JsonValue;
 
 #[derive(Debug)]
 struct S {
-    data: String
+    data: String,
 }
 
 struct RetVal {
     urls: Vec<String>,
-    ignores: Vec<String>
+    ignores: Vec<String>,
 }
 
 fn read_data() -> Vec<String> {
     eprintln!("Reading ignores. Please wait...");
-    let status = fs::read_to_string("ignores.url");//.split("\n").collect();
+    let status = fs::read_to_string("ignores.url"); //.split("\n").collect();
     let status = match status {
         Ok(s) => s,
-        Err(_) => { eprintln!("failed to read ignores.url, proceeding with default");"".to_string() },
+        Err(_) => {
+            eprintln!("failed to read ignores.url, proceeding with default");
+            "".to_string()
+        }
     };
     let ej: Vec<&str> = status.split('\n').collect();
-    let mut fj = vec!();
+    let mut fj = vec![];
     for i in ej {
         fj.push(i.to_string());
     }
@@ -36,26 +39,42 @@ fn read_data() -> Vec<String> {
 fn write_data(ignores: Vec<String>, urls: Vec<String>) {
     eprintln!("Now writing data.");
     let file = fs::OpenOptions::new()
-              .write(true)
-                    .append(true)
-                    .create(true)
-                          .open("ignores.url");
+        .write(true)
+        .append(true)
+        .create(true)
+        .open("ignores.url");
     let mut filefailed = false;
     let mut error: Error = Error::new(std::io::ErrorKind::Other, "bye");
     let mut file = match file {
-        Ok(fil) => {filefailed = false; fil},
-        Err(e) =>{error = e;filefailed = true; fs::OpenOptions::new().write(true).append(true).open("/dev/null").unwrap()},
+        Ok(fil) => {
+            filefailed = false;
+            fil
+        }
+        Err(e) => {
+            error = e;
+            filefailed = true;
+            fs::OpenOptions::new()
+                .write(true)
+                .append(true)
+                .open("/dev/null")
+                .unwrap()
+        }
     };
     if !filefailed {
         for ignore in ignores {
             writeln!(file, "{}", ignore).expect("failed to write file");
         }
-    }
-    else {
+    } else {
         eprintln!("Failed to write ignores: {}", error);
     }
-    let mut file = fs::OpenOptions::new().create(true).write(true).open("urls.url").unwrap();
-    for url in urls { writeln!(file, "{}", url).expect("failed to write URLs"); }
+    let mut file = fs::OpenOptions::new()
+        .create(true)
+        .write(true)
+        .open("urls.url")
+        .unwrap();
+    for url in urls {
+        writeln!(file, "{}", url).expect("failed to write URLs");
+    }
     //https://www.codegrepper.com/code-examples/rust/rust+how+to+append+to+a+file
 }
 
@@ -64,11 +83,13 @@ fn sql(filename: &str, ignores: Vec<String>, mut urls: Vec<String>, regex: Regex
     let conn = Connection::open(filename).unwrap();
     eprintln!("Attachments...");
     let mut stmt = conn.prepare("SELECT * FROM attachments").unwrap();
-    let person_iter = stmt.query_map([], |row| {
-                Ok(S {
-                    data: row.get(4).unwrap(), //attachment URL is on 5th column of each row.
-                    })
-                    }).unwrap();
+    let person_iter = stmt
+        .query_map([], |row| {
+            Ok(S {
+                data: row.get(4).unwrap(), //attachment URL is on 5th column of each row.
+            })
+        })
+        .unwrap();
     for attachment_url in person_iter {
         let att = attachment_url.unwrap().data;
         if ignores.contains(&att) {
@@ -76,12 +97,17 @@ fn sql(filename: &str, ignores: Vec<String>, mut urls: Vec<String>, regex: Regex
         }
         urls.push(att);
     }
-    eprintln!("Finished attachments. Now extracting messages...\nThis may take a while. Go get a coffee.");
+    eprintln!(
+        "Finished attachments. Now extracting messages...\nThis may take a while. Go get a coffee."
+    );
     let mut stmt = conn.prepare("SELECT * FROM messages").unwrap();
-    let person_iter = stmt.query_map([], |row| {
-        Ok(S {
-            data: row.get(3).unwrap(), // message data is on 4th column of each row.
-        })}).unwrap();
+    let person_iter = stmt
+        .query_map([], |row| {
+            Ok(S {
+                data: row.get(3).unwrap(), // message data is on 4th column of each row.
+            })
+        })
+        .unwrap();
     for message in person_iter {
         let m = message.unwrap().data;
         for mat in regex.find_iter(&m) {
@@ -102,8 +128,11 @@ fn messages_from_json(json: JsonValue) -> JsonValue {
     let method: String = json["request"]["method"].clone().try_into().unwrap();
     let request_type: String = json["type"].clone().try_into().unwrap();
     let regex = Regex::new(r#"^/api/v9/channels/\d+/messages"#).unwrap();
-    if request_type == "http" && method == "GET" && status_code == 200.0
-            && regex.is_match(&endpoint) {
+    if request_type == "http"
+        && method == "GET"
+        && status_code == 200.0
+        && regex.is_match(&endpoint)
+    {
         return json["response"]["data"].clone();
     }
     JsonValue::Array(Vec::new())
@@ -126,8 +155,7 @@ fn get_embed_urls(json: JsonValue, regex: Regex) -> Vec<String> {
             let footer_text: String = embed["footer"]["text"].clone().try_into().unwrap();
             description = format!("{}\n{}", description, footer_text);
             if footer.contains_key("icon_url") {
-                let icon_url: String = embed["footer"]["icon_url"]
-                    .clone().try_into().unwrap();
+                let icon_url: String = embed["footer"]["icon_url"].clone().try_into().unwrap();
                 this_code_sucks_lol.push(icon_url);
             }
         }
@@ -139,12 +167,11 @@ fn get_embed_urls(json: JsonValue, regex: Regex) -> Vec<String> {
             if embed.contains_key("url") {
                 let url: String = embed["video"]["url"].clone().try_into().unwrap();
                 this_code_sucks_lol.push(url);
-            }
-            else if embed.contains_key("proxy_url") { // better than nothing
+            } else if embed.contains_key("proxy_url") {
+                // better than nothing
                 let url: String = embed["video"]["proxy_url"].clone().try_into().unwrap();
                 this_code_sucks_lol.push(url);
-            }
-            else {
+            } else {
                 eprintln!("EMBED WARNING: Video does not have a url or proxy_url.")
             }
         }
@@ -164,7 +191,8 @@ fn get_embed_urls(json: JsonValue, regex: Regex) -> Vec<String> {
             }
         }
         if embed.contains_key("provider") {
-            let provider: HashMap<String, JsonValue> = embed["provider"].clone().try_into().unwrap();
+            let provider: HashMap<String, JsonValue> =
+                embed["provider"].clone().try_into().unwrap();
             if provider.contains_key("url") {
                 let url: String = provider["url"].clone().try_into().unwrap();
                 this_code_sucks_lol.push(url);
@@ -186,9 +214,14 @@ fn get_embed_urls(json: JsonValue, regex: Regex) -> Vec<String> {
         }
     }
     this_code_sucks_lol
-        // todo reduce duplication
+    // todo reduce duplication
 }
-fn discard2_jsonl(filename: &str, mut ignores: Vec<String>, mut urls: Vec<String>, regex: Regex) -> RetVal {
+fn discard2_jsonl(
+    filename: &str,
+    mut ignores: Vec<String>,
+    mut urls: Vec<String>,
+    regex: Regex,
+) -> RetVal {
     let file = File::open(filename).expect("Failed to open file");
     let reader = BufReader::new(file);
     for line in reader.lines() {
@@ -207,7 +240,10 @@ fn discard2_jsonl(filename: &str, mut ignores: Vec<String>, mut urls: Vec<String
             if !message["author"]["avatar"].is_null() {
                 let user_id: String = message["author"]["id"].clone().try_into().unwrap();
                 let avatar_id: String = message["author"]["avatar"].clone().try_into().unwrap();
-                let avatar_link = format!("https://cdn.discordapp.com/avatars/{}/{}.webp?size=4096", user_id, avatar_id);
+                let avatar_link = format!(
+                    "https://cdn.discordapp.com/avatars/{}/{}.webp?size=4096",
+                    user_id, avatar_id
+                );
                 if !ignores.contains(&avatar_link.to_string()) {
                     urls.push(avatar_link.clone());
                     ignores.push(avatar_link);
@@ -257,12 +293,12 @@ fn main() {
         panic!("{}", usage);
     }
     let mut ignores = read_data();
-    let mut urls = vec!();
+    let mut urls = vec![];
     let s: RetVal = match args[2].as_str() {
         "dht" => sql(&args[1], ignores.clone(), urls.clone(), regex),
         "plaintext" => plain_text(&args[1], ignores.clone(), urls.clone(), regex),
         "discard2" => discard2_jsonl(&args[1], ignores.clone(), urls.clone(), regex),
-        _ => panic!("{}", usage)
+        _ => panic!("{}", usage),
     };
     urls = s.urls;
     ignores = s.ignores;
@@ -270,5 +306,4 @@ fn main() {
         ignores.push(url_to_ignore.clone());
     }
     write_data(ignores, urls);
-
 }
