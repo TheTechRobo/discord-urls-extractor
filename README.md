@@ -24,9 +24,7 @@ Example: `cargo r /home/thetechrobo/Discordbackups/dsicord_data/SteamgridDB/Stea
 
 :warning: These steps have changed! (The old steps will still work, but the new ones are simpler and get more URLs.)
 
-This one's a bit more work, because I'm too lazy to figure out the raw JSONL discard2 can output. If you don't know how to use a reader for discard2, check its README.
-
-1. Use the `raw-jsonl` reader. Save its output into a file. Do not name that file `urls.url` or `ignores.url`.
+1. Use the `raw-jsonl` reader from discard2. Save its output into a file. Do not name that file `urls.url` or `ignores.url`.
 3. Run `cargo r messages.txt plaintext`, assuming you named the file in Step 2 `messages.txt`.
 4. Use a program to make sure there aren't any duplicate URLs. (There shouldn't be, but I'm not perfect.) On \*nix you can use `sort -u` or `uniq`.
 
