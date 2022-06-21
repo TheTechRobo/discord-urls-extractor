@@ -123,16 +123,18 @@ fn sql(filename: &str, ignores: Vec<String>, mut urls: Vec<String>, regex: Regex
 // Some of the following code logic is taken from
 // https://github.com/Sanqui/discard2/blob/master/src/reader/reader.ts
 fn messages_from_json(json: JsonValue) -> JsonValue {
+    let regex = Regex::new(r#"^/api/v9/channels/\d+/messages"#).unwrap();
+    let request_type: String = json["type"].clone().try_into().unwrap();
+    if request_type != "http" {
+        return JsonValue::Array(Vec::new());
+    }
     let status_code: f64 = json["response"]["status_code"].clone().try_into().unwrap();
     let endpoint: String = json["request"]["path"].clone().try_into().unwrap();
     let method: String = json["request"]["method"].clone().try_into().unwrap();
-    let request_type: String = json["type"].clone().try_into().unwrap();
-    let regex = Regex::new(r#"^/api/v9/channels/\d+/messages"#).unwrap();
     if request_type == "http"
-        && method == "GET"
-        && status_code == 200.0
-        && regex.is_match(&endpoint)
-    {
+            && method == "GET"
+            && status_code == 200.0
+            && regex.is_match(&endpoint) {
         return json["response"]["data"].clone();
     }
     JsonValue::Array(Vec::new())
