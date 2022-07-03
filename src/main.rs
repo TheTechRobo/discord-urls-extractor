@@ -10,7 +10,7 @@ use tinyjson::JsonValue;
 
 #[derive(Debug)]
 struct S {
-    data: String,
+    data: String, // i actually don't remember why I had to do it this way
 }
 
 struct RetVal {
@@ -218,6 +218,24 @@ fn get_embed_urls(json: JsonValue, regex: Regex) -> Vec<String> {
     this_code_sucks_lol
     // todo reduce duplication
 }
+
+fn get_component_urls(json: JsonValue) -> Vec<String> {
+    let mut urls = Vec::new();
+    let components: Vec<JsonValue> = json["components"].clone().try_into().unwrap();
+    for raw_component_lis in components {
+        let component_lis: Vec<JsonValue> = raw_component_lis["components"].clone().try_into().unwrap();
+        for component_ra in component_lis {
+            let component: HashMap<String, JsonValue> = component_ra.clone().try_into().unwrap();
+            //println!("{:?}", component);
+            if component.contains_key("url") {
+                let url: String = component["url"].clone().try_into().unwrap();
+                urls.push(url);
+            }
+        }
+    }
+    urls
+}
+
 fn discard2_jsonl(
     filename: &str,
     mut ignores: Vec<String>,
@@ -265,6 +283,12 @@ fn discard2_jsonl(
                 if !ignores.contains(&embed_url.to_string()) {
                     urls.push(embed_url.clone());
                     ignores.push(embed_url);
+                }
+            }
+            for component_url in get_component_urls(message.clone()) {
+                if !ignores.contains(&component_url.to_string()) {
+                    urls.push(component_url.clone());
+                    ignores.push(component_url);
                 }
             }
             //println!("{:?}", message);
