@@ -244,9 +244,9 @@ fn discard2_jsonl(
 ) -> RetVal {
     let file = File::open(filename).expect("Failed to open file");
     let reader = BufReader::new(file);
+    eprintln!("Searching through messages, this may take some time...");
     for line in reader.lines() {
         let json_line: JsonValue = line.unwrap().parse().expect("Failed to parse JSONL");
-        eprintln!("Searching through messages, this may take some time...");
         let messages: Vec<JsonValue> = messages_from_json(json_line).try_into().unwrap();
         for message in messages { // try to match with the url regex
             let m: String = message["content"].clone().try_into().unwrap();
