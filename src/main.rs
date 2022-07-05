@@ -13,7 +13,7 @@ struct S {
     data: String, // i actually don't remember why I had to do it this way
 }
 
-struct RetVal {
+struct RetVal { // so we can return both urls and ignores from a function
     urls: Vec<String>,
     ignores: Vec<String>,
 }
@@ -43,7 +43,7 @@ fn write_data(ignores: Vec<String>, urls: Vec<String>) {
         .append(true)
         .create(true)
         .open("ignores.url");
-    let mut filefailed = false;
+    let mut filefailed = false; // this brings up a warning but I'm not sure how to fix it
     let mut error: Error = Error::new(std::io::ErrorKind::Other, "bye");
     let mut file = match file {
         Ok(fil) => {
@@ -123,7 +123,7 @@ fn sql(filename: &str, ignores: Vec<String>, mut urls: Vec<String>, regex: Regex
 // Some of the following code logic is taken from
 // https://github.com/Sanqui/discard2/blob/master/src/reader/reader.ts
 fn messages_from_json(json: JsonValue) -> JsonValue {
-    let regex = Regex::new(r#"^/api/v9/channels/\d+/messages"#).unwrap();
+    let regex = Regex::new(r#"^/api/v9/channels/\d+/messages"#).unwrap(); // the api endpoint currently used by discord
     let request_type: String = json["type"].clone().try_into().unwrap();
     if request_type != "http" {
         return JsonValue::Array(Vec::new());
@@ -145,7 +145,7 @@ fn get_embed_urls(json: JsonValue, regex: Regex) -> Vec<String> {
     for embed in embeds {
         let embed: HashMap<String, JsonValue> = embed.clone().try_into().unwrap();
         let mut description: String = "".to_string();
-        if embed.contains_key("description") {
+        if embed.contains_key("description") { // We really need to wrap these into a function
             description = embed["description"].clone().try_into().unwrap();
         }
         if embed.contains_key("title") {
@@ -246,8 +246,9 @@ fn discard2_jsonl(
     let reader = BufReader::new(file);
     for line in reader.lines() {
         let json_line: JsonValue = line.unwrap().parse().expect("Failed to parse JSONL");
+        eprintln!("Searching through messages, this may take some time...");
         let messages: Vec<JsonValue> = messages_from_json(json_line).try_into().unwrap();
-        for message in messages {
+        for message in messages { // try to match with the url regex
             let m: String = message["content"].clone().try_into().unwrap();
             for mat in regex.find_iter(&m) {
                 let i = mat.as_str();
@@ -261,7 +262,7 @@ fn discard2_jsonl(
                 let user_id: String = message["author"]["id"].clone().try_into().unwrap();
                 let avatar_id: String = message["author"]["avatar"].clone().try_into().unwrap();
                 let avatar_link = format!(
-                    "https://cdn.discordapp.com/avatars/{}/{}.webp?size=4096",
+                    "https://cdn.discordapp.com/avatars/{}/{}.webp?size=4096", // get the highest quality avatar available
                     user_id, avatar_id
                 );
                 if !ignores.contains(&avatar_link.to_string()) {
@@ -299,6 +300,7 @@ fn discard2_jsonl(
 fn plain_text(filename: &str, ignores: Vec<String>, mut urls: Vec<String>, regex: Regex) -> RetVal {
     let file = File::open(filename).expect("Failed to open file");
     let reader = BufReader::new(file);
+    eprintln!("Searching through lines of plain-text file...");
     for line in reader.lines() {
         let m = line.unwrap();
         for mat in regex.find_iter(&m) {
