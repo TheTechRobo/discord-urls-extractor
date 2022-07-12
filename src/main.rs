@@ -6,7 +6,12 @@ use std::fs::File;
 use std::io::Write;
 use std::io::{BufRead, BufReader, Error};
 
+use clap::Parser;
+
 use tinyjson::JsonValue;
+
+mod gateway;
+mod cli;
 
 #[derive(Debug)]
 struct S {
@@ -18,22 +23,22 @@ struct RetVal { // so we can return both urls and ignores from a function
     ignores: Vec<String>,
 }
 
-fn read_data() -> Vec<String> {
+fn read_data() -> Vec<String> { // should really be named `read_ignores()'
     eprintln!("Reading ignores. Please wait...");
-    let status = fs::read_to_string("ignores.url"); //.split("\n").collect();
-    let status = match status {
+    let status = fs::read_to_string("ignores.url");
+    let data = match status {
         Ok(s) => s,
         Err(_) => {
             eprintln!("failed to read ignores.url, proceeding with default");
             "".to_string()
         }
     };
-    let ej: Vec<&str> = status.split('\n').collect();
-    let mut fj = vec![];
-    for i in ej {
-        fj.push(i.to_string());
+    let urls: Vec<&str> = data.split('\n').collect();
+    let mut ignores = Vec::new();
+    for url in urls {
+        ignores.push(url.to_string());
     }
-    fj
+    ignores
 }
 
 fn write_data(ignores: Vec<String>, urls: Vec<String>) {
@@ -78,7 +83,10 @@ fn write_data(ignores: Vec<String>, urls: Vec<String>) {
     //https://www.codegrepper.com/code-examples/rust/rust+how+to+append+to+a+file
 }
 
-fn sql(filename: &str, ignores: Vec<String>, mut urls: Vec<String>, regex: Regex) -> RetVal {
+fn sql(filename: &str, ignores: Vec<String>, mut urls: Vec<String>, regex: Regex, arguments: cli::Args) -> RetVal {
+    if arguments.use_websockets {
+        panic!("--parse-websockets can only be used with discard2 JSONL");
+    }
     eprintln!("Connecting to SQL database...");
     let conn = Connection::open(filename).unwrap();
     eprintln!("Attachments...");
@@ -241,12 +249,32 @@ fn discard2_jsonl(
     mut ignores: Vec<String>,
     mut urls: Vec<String>,
     regex: Regex,
+    arguments: cli::Args
 ) -> RetVal {
+    let guild_id: String = match arguments.guild_id {
+        Some(id) => id,
+        None => "a".to_string() // one that will never be used
+    };
+    if guild_id == "a" && arguments.use_websockets {
+        panic!("You have to provide the server ID to use --parse-websockets. See --help for more information.");
+    }
     let file = File::open(filename).expect("Failed to open file");
     let reader = BufReader::new(file);
     eprintln!("Searching through messages, this may take some time...");
     for line in reader.lines() {
         let json_line: JsonValue = line.unwrap().parse().expect("Failed to parse JSONL");
+        let request_type: String = json_line["type"].clone().try_into().unwrap();
+        if request_type == "ws" && arguments.use_websockets {
+            let direction: String = json_line["direction"].clone().try_into().unwrap();
+            if direction == "recv" {
+                for url in gateway::gateway_parse(json_line["data"].clone(), guild_id.clone()) {
+                    if !ignores.contains(&url) {
+                        urls.push(url.clone());
+                        ignores.push(url);
+                    }
+                }
+            }
+        }
         let messages: Vec<JsonValue> = messages_from_json(json_line).try_into().unwrap();
         for message in messages { // try to match with the url regex
             let m: String = message["content"].clone().try_into().unwrap();
@@ -297,7 +325,10 @@ fn discard2_jsonl(
     }
     RetVal { urls, ignores }
 }
-fn plain_text(filename: &str, ignores: Vec<String>, mut urls: Vec<String>, regex: Regex) -> RetVal {
+fn plain_text(filename: &str, ignores: Vec<String>, mut urls: Vec<String>, regex: Regex, arguments: cli::Args) -> RetVal {
+    if arguments.use_websockets {
+        panic!("--parse-websockets can only be used with discard2 JSONL");
+    }
     let file = File::open(filename).expect("Failed to open file");
     let reader = BufReader::new(file);
     eprintln!("Searching through lines of plain-text file...");
@@ -315,18 +346,15 @@ fn plain_text(filename: &str, ignores: Vec<String>, mut urls: Vec<String>, regex
 
 fn main() {
     let regex = Regex::new(r#"(https?://[^\s<]+[^?~*|<>.,:;"'`)\]\s])"#).unwrap();
-    let args: Vec<String> = std::env::args().collect();
-    let usage = format!("Usage: {} <file> <type: dht|plaintext|discard2>", &args[0]);
-    if args.len() < 3 {
-        panic!("{}", usage);
-    }
+    let arguments = cli::Args::parse();
     let mut ignores = read_data();
     let mut urls = vec![];
-    let s: RetVal = match args[2].as_str() {
-        "dht" => sql(&args[1], ignores.clone(), urls.clone(), regex),
-        "plaintext" => plain_text(&args[1], ignores.clone(), urls.clone(), regex),
-        "discard2" => discard2_jsonl(&args[1], ignores.clone(), urls.clone(), regex),
-        _ => panic!("{}", usage),
+    let filename: &str = &arguments.file.clone().into_os_string().into_string().unwrap();
+    let s: RetVal = match arguments.file_type.as_str() {
+        "dht" => sql(filename, ignores.clone(), urls, regex, arguments),
+        "plaintext" => plain_text(filename, ignores.clone(), urls, regex, arguments),
+        "discard2" => discard2_jsonl(filename, ignores.clone(), urls, regex, arguments),
+        _ => panic!("...?")
     };
     urls = s.urls;
     ignores = s.ignores;
