@@ -28,6 +28,8 @@ Example: `cargo r /home/thetechrobo/Discordbackups/dsicord_data/SteamgridDB/Stea
 3. Run `cargo r messages.jsonl discard2`, assuming you named the file in Step 2 `messages.jsonl`.
 4. Use a program to get rid of any duplicate URLs. (There shouldn't be any, but I'm not perfect.) On \*nix you can use `sort -u` or `uniq`.
 
+To get even more data (server emojis, role icons, and more), `--parse-websockets`. Note that you then have to specify the `--guild-id` (server ID; can be found in the state.json)
+
 ## Usage with plain text
 If you have some plain text files, you can use them directly. That will find all URLs saved in the file, or at least most of them.
 
