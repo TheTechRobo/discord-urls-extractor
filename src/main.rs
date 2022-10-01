@@ -18,6 +18,12 @@ struct S {
     data: String, // i actually don't remember why I had to do it this way
 }
 
+#[derive(Debug)]
+struct User {
+    id: u64,
+    avatar_id: Option<String>,
+}
+
 struct RetVal { // so we can return both urls and ignores from a function
     urls: Vec<String>,
     ignores: Vec<String>,
@@ -36,7 +42,9 @@ fn read_data() -> Vec<String> { // should really be named `read_ignores()'
     let urls: Vec<&str> = data.split('\n').collect();
     let mut ignores = Vec::new();
     for url in urls {
-        ignores.push(url.to_string());
+        if url != "" {
+            ignores.push(url.to_string());
+        }
     }
     ignores
 }
@@ -74,7 +82,7 @@ fn write_data(ignores: Vec<String>, urls: Vec<String>) {
         .create(true)
         .write(true)
         .open("urls.url")
-        .unwrap();
+        .expect("couldn't open urls.url");
     for url in urls {
         writeln!(file, "{}", url).expect("failed to write URLs");
     }
@@ -103,8 +111,28 @@ fn sql(filename: &str, ignores: Vec<String>, mut urls: Vec<String>, regex: Regex
         }
         urls.push(att);
     }
+    eprintln!("Avatars...");
+    let mut stmt = conn.prepare("SELECT * FROM users").unwrap();
+    let person_iter = stmt
+        .query_map([], |row| {
+            Ok(User {
+                id: row.get(0).unwrap(), // The user ID
+                avatar_id: row.get(2).unwrap(),
+            })
+        })
+        .unwrap();
+    for avatar_url in person_iter {
+        let avatar_url = avatar_url.unwrap();
+        if let Some(avatar_id) = avatar_url.avatar_id.clone() {
+            let att = format!("https://cdn.discordapp.com/avatars/{}/{}.webp?size=4096", avatar_url.id, avatar_id);
+            if ignores.contains(&att) {
+                continue;
+            }
+            urls.push(att);
+        }
+    }
     eprintln!(
-        "Finished attachments. Now extracting messages...\nThis may take a while. Go get a coffee."
+        "Finished avatars. Now extracting messages...\nThis may take a while. Go get a coffee."
     );
     let mut stmt = conn.prepare("SELECT * FROM messages").unwrap();
     let person_iter = stmt
@@ -343,6 +371,9 @@ fn plain_text(filename: &str, ignores: Vec<String>, mut urls: Vec<String>, regex
 }
 
 fn main() {
+    if std::path::Path::new("urls.url").exists() {
+        panic!("cowardly refusing to overwrite urls.url");
+    }
     let regex = Regex::new(r#"(https?://[^\s<]+[^?~*|<>.,:;"'`)\]\s])"#).unwrap();
     let arguments = cli::Args::parse();
     let mut ignores = read_data();
