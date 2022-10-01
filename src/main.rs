@@ -45,7 +45,6 @@ fn write_data(ignores: Vec<String>, urls: Vec<String>) {
     eprintln!("Now writing data.");
     let file = fs::OpenOptions::new()
         .write(true)
-        .append(true)
         .create(true)
         .open("ignores.url");
     let mut filefailed = false; // this brings up a warning but I'm not sure how to fix it
@@ -60,7 +59,6 @@ fn write_data(ignores: Vec<String>, urls: Vec<String>) {
             filefailed = true;
             fs::OpenOptions::new()
                 .write(true)
-                .append(true)
                 .open("/dev/null")
                 .unwrap()
         }
