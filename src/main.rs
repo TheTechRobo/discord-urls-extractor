@@ -151,6 +151,26 @@ fn sql(filename: &str, ignores: Vec<String>, mut urls: Vec<String>, regex: Regex
             }
         }
     }
+    eprintln!("Finally, extracting embeds...");
+    let mut stmt = conn.prepare("SELECT * FROM embeds").unwrap();
+    let person_iter = stmt
+        .query_map([], |row| {
+            Ok(S {
+                data: row.get(1).unwrap(), // message data is on 4th column of each row.
+            })
+        })
+        .unwrap();
+    for embed in person_iter {
+        let embed = embed.unwrap().data.parse().expect("bad JSON");
+        let mut hm = HashMap::new();
+        hm.insert("embeds".to_string(), JsonValue::Array(vec![embed]));
+        let embeds = JsonValue::Object(hm);
+        for url in get_embed_urls(embeds, regex.clone()) {
+            if !ignores.contains(&url) {
+                urls.push(url);
+            }
+        }
+    }
     RetVal { urls, ignores }
 }
 
