@@ -156,7 +156,7 @@ fn sql(filename: &str, ignores: Vec<String>, mut urls: Vec<String>, regex: Regex
     let person_iter = stmt
         .query_map([], |row| {
             Ok(S {
-                data: row.get(1).unwrap(), // message data is on 4th column of each row.
+                data: row.get(1).unwrap(),
             })
         })
         .unwrap();
