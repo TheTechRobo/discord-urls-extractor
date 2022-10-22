@@ -16,8 +16,10 @@ Tip: `ignores.url` is a list of URLs that should NOT be extracted. This allows y
 
 - `ignores.url` is read into memory, new URLs are added to it, and then `ignores.url` is overwritten with the loaded values. As such, don't modify `ignores.url` while the script is running - your changes will have no effect, and when the script finishes they will be overwritten!
 
+(Also, I think this goes without saying, but don't run the app multiple times in the same folder. That's a recipe for ~~turnabout~~ disaster.) <!-- fight me -->
+
 ## Usage with Discord History Tracker (DESKTOP APP ONLY)
-:warning: Note that the DHT extractor is pretty much unmaintained since I no longer use it. I'll fix bugs, but it doesn't support embeds or any new DHT features. It only supports extracting attachment urls (which can now be done via DHT!) and finding URLs in messages using a regex. It does not look through embeds or any other feature.
+:warning: Note that the DHT extractor is pretty much unmaintained since I no longer use it. I'll fix bugs, but ~~it doesn't support embeds~~ or any new DHT features. It only supports extracting attachment urls (which can now be done via DHT!) and finding URLs in messages using a regex (and getting avatar urls). ~~It does not look through embeds~~ or any other feature.
 
 Once you've got your .dht file, run:
 
@@ -38,7 +40,7 @@ Example: `cargo r /home/thetechrobo/Discordbackups/dsicord_data/SteamgridDB/Stea
 To get even more data (server emojis, role icons, and more), `--parse-websockets`. Note that you then have to specify the `--guild-id` (server ID; can be found in the state.json)
 
 ## Usage with plain text
-If you have some plain text files, you can use them directly. That will find all URLs saved in the file, or at least most of them.
+If you have some plain text files, you can use them directly. That will find all URLs saved in the file, or at least most of them. I think.
 
     cargo r <file path> plaintext
     
