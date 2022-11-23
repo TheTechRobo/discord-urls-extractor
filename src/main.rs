@@ -42,7 +42,7 @@ fn read_data() -> Vec<String> { // should really be named `read_ignores()'
     let urls: Vec<&str> = data.split('\n').collect();
     let mut ignores = Vec::new();
     for url in urls {
-        if url != "" {
+        if !url.is_empty() {
             ignores.push(url.to_string());
         }
     }
