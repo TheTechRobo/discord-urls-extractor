@@ -16,7 +16,7 @@ Tip: `ignores.url` is a list of URLs that should NOT be extracted. This allows y
 
 - `ignores.url` is read into memory, new URLs are added to it, and then `ignores.url` is overwritten with the loaded values. As such, don't modify `ignores.url` while the script is running - your changes will have no effect, and when the script finishes they will be overwritten!
 
-(Also, I think this goes without saying, but don't run the app multiple times in the same folder. That's a recipe for ~~turnabout~~ disaster.) <!-- fight me -->
+(Also, I think this goes without saying, but don't run the app multiple times at the same time in the same folder. That's a recipe for ~~turnabout~~ disaster.) <!-- fight me -->
 
 ## Usage with Discord History Tracker (DESKTOP APP ONLY)
 :warning: Note that the DHT extractor is pretty much unmaintained since I no longer use it. I'll fix bugs, but ~~it doesn't support embeds~~ or any new DHT features. It only supports extracting attachment urls (which can now be done via DHT!) and finding URLs in messages using a regex (and getting avatar urls). ~~It does not look through embeds~~ or any other feature.
