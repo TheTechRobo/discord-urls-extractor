@@ -1,4 +1,5 @@
 target/
+nohup.out
 dsicord_data/
 *.url
 *.dht

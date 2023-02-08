@@ -55,6 +55,7 @@ fn write_data(ignores: Vec<String>, urls: Vec<String>) {
         .write(true)
         .create(true)
         .open("ignores.url");
+    #[allow(unused_assignments)]
     let mut filefailed = false; // this brings up a warning but I'm not sure how to fix it
     let mut error: Error = Error::new(std::io::ErrorKind::Other, "bye");
     let mut file = match file {
@@ -87,6 +88,59 @@ fn write_data(ignores: Vec<String>, urls: Vec<String>) {
         writeln!(file, "{}", url).expect("failed to write URLs");
     }
     //https://www.codegrepper.com/code-examples/rust/rust+how+to+append+to+a+file
+}
+
+fn dce(filename: &str, ignores: Vec<String>, mut urls: Vec<String>, regex: Regex, arguments: cli::Args) -> RetVal {
+    if arguments.use_websockets {
+        panic!("--parse-websockets can only be used with discard2 JSONL");
+    }
+    let jj: JsonValue = {
+        // doing this as a block makes sure we drop this string afterwards
+        // the compiler might optimise that but I'm not sure
+        eprintln!("Reading JSON... This may take up an obscene amount of RAM.");
+        let contents = fs::read_to_string(filename).expect("Couldnt read file");
+        contents.parse().unwrap()
+    };
+    eprintln!("Now extracting URLs. This may take awhile!");
+    let icon_url: String = jj["guild"]["iconUrl"].clone().try_into().unwrap();
+    if !ignores.contains(&icon_url) {
+        urls.push(icon_url);
+    }
+    let messages: Vec<_> = jj["messages"].clone().try_into().unwrap();
+    for message in messages {
+        let avatar_url: String = message["author"]["avatarUrl"].clone().try_into().unwrap();
+        if !ignores.contains(&avatar_url) {
+            urls.push(avatar_url.clone());
+        }
+        let content: String = message["content"].clone().try_into().unwrap();
+        for mat in regex.find_iter(&content) {
+            let i = mat.as_str();
+            if !ignores.contains(&i.to_string()) {
+                urls.push(i.to_string());
+            }
+        }
+        let attachments: Vec<_> = message["attachments"].clone().try_into().unwrap();
+        for attachment in attachments {
+            let url: String = attachment["url"].clone().try_into().unwrap();
+            if !ignores.contains(&url) {
+                urls.push(url);
+            }
+        }
+        let reactions: Vec<_> = message["reactions"].clone().try_into().unwrap();
+        for reaction in reactions {
+            let emoji: HashMap<_,_> = reaction["emoji"].clone().try_into().unwrap();
+            let url: String = emoji["imageUrl"].clone().try_into().unwrap();
+            if !ignores.contains(&url) {
+                urls.push(url);
+            }
+        }
+        for embed_url in get_embed_urls(message, regex.clone()) {
+            if !ignores.contains(&embed_url) {
+                urls.push(embed_url);
+            }
+        }
+    }
+    RetVal { urls: urls, ignores: ignores }
 }
 
 fn sql(filename: &str, ignores: Vec<String>, mut urls: Vec<String>, regex: Regex, arguments: cli::Args) -> RetVal {
@@ -233,7 +287,7 @@ fn get_embed_urls(json: JsonValue, regex: Regex) -> Vec<String> {
         }
         if embed.contains_key("author") {
             let author: HashMap<String, JsonValue> = embed["author"].clone().try_into().unwrap();
-            if author.contains_key("url") {
+            if author.contains_key("url") && !author["url"].is_null() {
                 let url: String = author["url"].clone().try_into().unwrap();
                 this_code_sucks_lol.push(url);
             }
@@ -264,7 +318,7 @@ fn get_embed_urls(json: JsonValue, regex: Regex) -> Vec<String> {
             let image: String = embed["image"]["url"].clone().try_into().unwrap();
             this_code_sucks_lol.push(image);
         }
-        if embed.contains_key("url") {
+        if embed.contains_key("url") && !embed["url"].is_null() {
             let url: String = embed["url"].clone().try_into().unwrap();
             this_code_sucks_lol.push(url.to_string());
         }
@@ -403,6 +457,7 @@ fn main() {
         "dht" => sql(filename, ignores.clone(), urls, regex, arguments),
         "plaintext" => plain_text(filename, ignores.clone(), urls, regex, arguments),
         "discard2" => discard2_jsonl(filename, ignores.clone(), urls, regex, arguments),
+        "dce" => dce(filename, ignores.clone(), urls, regex, arguments),
         _ => panic!("...?")
     };
     urls = s.urls;

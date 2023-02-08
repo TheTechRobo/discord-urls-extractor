@@ -20,6 +20,6 @@ pub struct Args {
     #[clap(value_name="FILE")]
     pub file: PathBuf,
 
-    #[clap(value_name="TYPE", value_parser=["dht", "discard2", "plaintext"])]
+    #[clap(value_name="TYPE", value_parser=["dht", "discard2", "plaintext", "dce"])]
     pub file_type: String
 }
