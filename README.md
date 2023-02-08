@@ -6,7 +6,7 @@ I'm actually using this program in production! Updates are made when I'm interes
 
 ### Information
 
-Created for injesting URLs from DHT scrapes (and now discard2 ones, too!) into the Archiveteam URLs project.
+Created for injesting URLs from DHT scrapes (and now discard2 ones, too!) (oh wait: now DiscordChatExporter ones, three!) into the Archiveteam URLs project.
 
 Might not extract all URLs correctly. [#8](https://github.com/TheTechRobo/discordhistorytracker-urls-extractor/pull/8) improved on this, though.
 
@@ -38,6 +38,24 @@ Example: `cargo r /home/thetechrobo/Discordbackups/dsicord_data/SteamgridDB/Stea
 4. Use a program to get rid of any duplicate URLs. (There shouldn't be any, but I'm not perfect.) On \*nix you can use `sort -u` or `uniq`.
 
 To get even more data (server emojis, role icons, and more), `--parse-websockets`. Note that you then have to specify the `--guild-id` (server ID; can be found in the state.json)
+
+## Usage with DiscordChatExporter
+
+:warning: DiscordChatExporter's extractor will use a ton of memory for large channels. This is due to both limitations in the file format, and limitations in the JSON library I'm using.
+
+DiscordChatExporter is now supported! You can only run one channel at a time, though, and you must use the JSON output format. CSV may be supported in the future. Usage is:
+
+```bash
+cargo run /path/to/channel.json dce
+```
+
+To run an entire folder of JSONs, you could run a script. For example, here's the script I use (tested on zsh, probably won't work on windows, might work on bash):
+
+```zsh
+for i in out/*; do cargo r --release --manifest-path=$HOME/Discordbackups/Cargo.toml "$i" dce; cat urls.url >> urls.url.finished; rm urls.url; sleep 3; done
+```
+
+(The `sleep 3` is just for me to catch any errors that occur, as there's no error handling in that script.)
 
 ## Usage with plain text
 If you have some plain text files, you can use them directly. That will find all URLs saved in the file, or at least most of them. I think.
