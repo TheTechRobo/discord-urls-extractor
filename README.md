@@ -43,6 +43,8 @@ To get even more data (server emojis, role icons, and more), `--parse-websockets
 
 :warning: DiscordChatExporter's extractor will use a ton of memory for large channels. This is due to both limitations in the file format, and limitations in the JSON library I'm using.
 
+:warning: If you go this route, you CANNOT run DiscordChatExporter with the `--media` option ! Doing so will replace the URLs in the json with the path to the local file, which will cause the URL list to have paths to local files instead of HTTP resources.
+
 DiscordChatExporter is now supported! You can only run one channel at a time, though, and you must use the JSON output format. CSV may be supported in the future. Usage is:
 
 ```bash
