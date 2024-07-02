@@ -54,10 +54,8 @@ cargo run /path/to/channel.json dce
 To run an entire folder of JSONs, you could run a script. For example, here's the script I use (tested on zsh, probably won't work on windows, might work on bash):
 
 ```zsh
-for i in out/*; do cargo r --release --manifest-path=$HOME/Discordbackups/Cargo.toml "$i" dce; cat urls.url >> urls.url.finished; rm urls.url; sleep 3; done
+for i in *.json ; do echo $i ; <PATH_TO_EXECUTABLE> "$i" dce && { cat urls.url >> urls.url_finished; rm urls.url; continue }; echo FAILED; break ; done
 ```
-
-(The `sleep 3` is just for me to catch any errors that occur, as there's no error handling in that script.)
 
 ## Usage with plain text
 If you have some plain text files, you can use them directly. That will find all URLs saved in the file, or at least most of them. I think.
