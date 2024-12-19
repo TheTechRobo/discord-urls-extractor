@@ -1,12 +1,12 @@
 # discord-urls-extractor
 
-### Maintainence Level: Updated as I need it.
+### Maintainence Level: Sad :(
 
-I'm actually using this program in production! Updates are made when I'm interested, or when they're necessary.
+I haven't made Discord dumps in quite some time, so I haven't needed to update this. PRs are still welcome!
 
 ### Information
 
-Created for injesting URLs from DHT scrapes (and now discard2 ones, too!) (oh wait: now DiscordChatExporter ones, three!) into the Archiveteam URLs project. But you can use the URL lists for whatever you please! (Except DDoSing. Please don't do that. I don't want to be your partner in crime, believe it or not.)
+Created for injesting URLs from DHT scrapes (and now discard2 ones, too!) (oh wait: now DiscordChatExporter ones, three!) into the Archiveteam URLs project. But you can use the URL lists for whatever you please! (Except DDoSing. Please don't do that.)
 
 Might not extract all URLs correctly. [#8](https://github.com/TheTechRobo/discordhistorytracker-urls-extractor/pull/8) improved on this, though.
 
